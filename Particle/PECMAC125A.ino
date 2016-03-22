@@ -14,7 +14,6 @@ unsigned int data[36];
 int typeOfSensor = 0;
 int maxCurrent = 0;
 int noOfChannel = 0;
-String result; 
 void setup() 
 {
     // Set variable
@@ -119,8 +118,6 @@ void loop()
         // Output to the dashboard
         Particle.publish("Channel : ", String(i + 1));
         Particle.publish("Current : ", String(current));
-        
-        result += String(current) + ",";
     }
     delay(500);
 }
