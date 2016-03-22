@@ -21,7 +21,6 @@ void setup()
     Particle.variable("typeOfSensor", typeOfSensor);
     Particle.variable("maxCurrent", maxCurrent);
     Particle.variable("noOfChannel", noOfChannel);
-    Particle.variable("result", result);
     
     // Initialise I2C communication as MASTER
     Wire.begin();
