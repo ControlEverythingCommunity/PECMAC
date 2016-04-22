@@ -9,113 +9,111 @@
 // PECMAC125A I2C address is 2A(42)
 #define Addr 0x2A
 
-
 unsigned int data[36];
 int typeOfSensor = 0;
 int maxCurrent = 0;
 int noOfChannel = 0;
-void setup() 
+void setup()
 {
   // Initialise I2C communication as MASTER
   Wire.begin();
   // Initialise Serial Communication, set baud rate = 9600
   Serial.begin(9600);
 
-  // Read configuration command
-  // Header byte-1, Header byte-2, command-2, byte 3, 4, 5 and 6 are reserved, checksum
-  byte readConfigCommand[8] = {0x92, 0x6A, 0x02, 0x00, 0x00, 0x00, 0x00, 0xFE};
-  
-  // Start I2C Transmission
+  // Start I2C transmission
   Wire.beginTransmission(Addr);
-  // Send read configuration command   
-  Wire.write(readConfigCommand, 8);
-  // Stop I2C Transmission
+  // Command header byte-1
+  Wire.write(0x92);
+  // Command header byte-2
+  Wire.write(0x6A);
+  // Command 2 is used to read no of sensor type, Max current, No. of channel
+  Wire.write(0x02);
+  // Reserved
+  Wire.write(0x00);
+  // Reserved
+  Wire.write(0x00);
+  // Reserved
+  Wire.write(0x00);
+  // Reserved
+  Wire.write(0x00);
+  // CheckSum
+  Wire.write(0xFE);
+  // Stop I2C transmission
   Wire.endTransmission();
 
-  for(int i = 0; i < 3; i++)
-    {
-      // Start I2C Transmission
-      Wire.beginTransmission(Addr);
-      // Stop I2C Transmission
-      Wire.endTransmission();
+  // Request 6 bytes of data
+  Wire.requestFrom(Addr, 6);
 
-      // Request 1 byte of data
-      Wire.requestFrom(Addr, 1);
+  // Read 6 bytes of data
+  if (Wire.available() == 6)
+  {
+    data[0] = Wire.read();
+    data[1] = Wire.read();
+    data[2] = Wire.read();
+    data[3] = Wire.read();
+    data[4] = Wire.read();
+    data[5] = Wire.read();
+  }
 
-      // Read 3 bytes of data
-      // typeOfSensor, maxCurrent, noOfChannel
-      if(Wire.available() == 1)
-      {
-        data[i] = Wire.read();
-      }
-    }
-
-    typeOfSensor = data[0];
-    maxCurrent = data[1];
-    noOfChannel = data[2];
+  typeOfSensor = data[0];
+  maxCurrent = data[1];
+  noOfChannel = data[2];
 
   // Output data to serial monitor
-  Serial.print(" Type Of Sensor : ");
+  Serial.print("Type Of Sensor : ");
   Serial.println(typeOfSensor);
-  Serial.print(" Max Current : ");
-  Serial.println(maxCurrent);
-  Serial.print(" No Of Channel : ");
+  Serial.print("Max Current : ");
+  Serial.print(maxCurrent);
+  Serial.println(" Amp");
+  Serial.print("No. Of Channel : ");
   Serial.println(noOfChannel);
   delay(300);
 }
 
 void loop()
 {
-  // Read current command
-  // Header byte-1, Header byte-2, command-1, start channel-1, stop channel-12,
-  // byte 5 and 6 reserved, checksum
-  byte readCurrentCommand[8] = {0x92, 0x6A, 0x01, 0x01, noOfChannel, 0x00, 0x00, 0x0A};
-
   // Start I2C Transmission
   Wire.beginTransmission(Addr);
-  // Send configuration command   
-  Wire.write(readCurrentCommand, 8);
+  // Command header byte-1
+  Wire.write(0x92);
+  // Command header byte-2
+  Wire.write(0x6A);
+  // Command 1
+  Wire.write(0x01);
+  // Start Channel No.
+  Wire.write(0x01);
+  // End Channel No.
+  Wire.write(noOfChannel);
+  // Reserved
+  Wire.write(0x00);
+  // Reserved
+  Wire.write(0x00);
+  // CheckSum
+  Wire.write((0x92 + 0x6A + 0x01 + 0x01 + noOfChannel + 0x00 + 0x00) & 0xFF);
   // Stop I2C Transmission
   Wire.endTransmission();
-  
-  for(int i = 0; i < noOfChannel * 3; i++)
-    {
-      // Start I2C Transmission
-      Wire.beginTransmission(Addr);
-      // Stop I2C Transmission
-      Wire.endTransmission();
+  delay(500);
 
-      // Request 1 byte of data
-      Wire.requestFrom(Addr, 1);
+  // Request (noOfChannel * 3) bytes of data
+  Wire.requestFrom(Addr, noOfChannel * 3);
 
-      // Read 3 bytes of data
-      // typeOfSensor, maxCurrent, noOfChannel
-      if(Wire.available() == 1)
-      {
-        data[i] = Wire.read();
-      }
-    }
-  
-  for(int i = 0; i < noOfChannel; i++)
+  for (int j = 0; j < noOfChannel; j++)
   {
-    // Read current data
+    // Read 3 bytes of data
     // msb1, msb, lsb
-    int msb1 = data[i * 3] & 0xff;
-    int msb = data[1 + i * 3] & 0xff ;
-    int lsb = data[2 + i * 3] & 0xff;
-    Serial.print(msb1);
-    Serial.print(msb);
-    Serial.print(lsb);
+    int msb1 = Wire.read();
+    int msb = Wire.read();
+    int lsb = Wire.read();
     float current = (msb1 * 65536) + (msb * 256) + lsb;
-    
+
     // Convert the data to ampere
     current = current / 1000;
 
     // Output to the serial monitor
     Serial.print("Channel : ");
-    Serial.println(i + 1);
-    Serial.print("Current : ");
+    Serial.println(j + 1);
+    Serial.print("Current Value : ");
     Serial.println(current);
+    delay(1000);
   }
-  delay(500);
 }
