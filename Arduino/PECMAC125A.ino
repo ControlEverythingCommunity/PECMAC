@@ -72,33 +72,33 @@ void setup()
 
 void loop()
 {
-  // Start I2C Transmission
-  Wire.beginTransmission(Addr);
-  // Command header byte-1
-  Wire.write(0x92);
-  // Command header byte-2
-  Wire.write(0x6A);
-  // Command 1
-  Wire.write(0x01);
-  // Start Channel No.
-  Wire.write(0x01);
-  // End Channel No.
-  Wire.write(noOfChannel);
-  // Reserved
-  Wire.write(0x00);
-  // Reserved
-  Wire.write(0x00);
-  // CheckSum
-  Wire.write((0x92 + 0x6A + 0x01 + 0x01 + noOfChannel + 0x00 + 0x00) & 0xFF);
-  // Stop I2C Transmission
-  Wire.endTransmission();
-  delay(500);
-
-  // Request (noOfChannel * 3) bytes of data
-  Wire.requestFrom(Addr, noOfChannel * 3);
-
-  for (int j = 0; j < noOfChannel; j++)
+  for (int j = 1; j < noOfChannel + 1; j++)
   {
+    // Start I2C Transmission
+    Wire.beginTransmission(Addr);
+    // Command header byte-1
+    Wire.write(0x92);
+    // Command header byte-2
+    Wire.write(0x6A);
+    // Command 1
+    Wire.write(0x01);
+    // Start Channel No.
+    Wire.write(j);
+    // End Channel No.
+    Wire.write(j);
+    // Reserved
+    Wire.write(0x00);
+    // Reserved
+    Wire.write(0x00);
+    // CheckSum
+    Wire.write((0x92 + 0x6A + 0x01 + j + j + 0x00 + 0x00) & 0xFF);
+    // Stop I2C Transmission
+    Wire.endTransmission();
+    delay(500);
+
+    // Request 3 bytes of data
+    Wire.requestFrom(Addr, 3);
+
     // Read 3 bytes of data
     // msb1, msb, lsb
     int msb1 = Wire.read();
@@ -111,7 +111,7 @@ void loop()
 
     // Output to the serial monitor
     Serial.print("Channel : ");
-    Serial.println(j + 1);
+    Serial.println(j);
     Serial.print("Current Value : ");
     Serial.println(current);
     delay(1000);
