@@ -69,9 +69,11 @@ void setup()
 
   // Output data to dashboard
   Particle.publish("Type Of Sensor : ", String(typeOfSensor));
+  delay(1000);
   Particle.publish("Max Current : ", String(maxCurrent));
+  delay(1000);
   Particle.publish("No. Of Channel : ", String(noOfChannel));
-  delay(300);
+  delay(1000);
 }
 
 void loop()
