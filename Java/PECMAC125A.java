@@ -20,7 +20,8 @@ public class PECMAC125A
 
 		// Read configuration command
 		// Header byte-1, Header byte-2, command-2, byte 3, 4, 5 and 6 are reserved, checksum
-		byte[] readConfigCommand = {(byte)0x92, (byte)0x6A, 0x02, 0x00, 0x00, 0x00, 0x00, (byte)0xFE};
+		byte[] readConfigCommand = {(byte)0x92, (byte)0x6A, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
+		populateChecksum(readConfigCommand);
 
 		// Send read configuration command
 		device.write(readConfigCommand, 0, 8);
@@ -33,7 +34,7 @@ public class PECMAC125A
 
 		int typeOfSensor = data[0];
 		int maxCurrent = data[1];
-		int noOfChannel = data[2];
+		byte noOfChannel = (byte)data[2];
 
 		// Output data to screen
 		System.out.printf("Type Of Sensor : %d %n", typeOfSensor);
@@ -42,7 +43,8 @@ public class PECMAC125A
 
 		// Read current command
 		// Header byte-1, Header byte-2, command-1, start channel-1, stop channel-12, byte 5 and 6 reserved, checksum
-		byte[] readCurrentCommand = {(byte)0x92, (byte)0x6A, 0x01, 0x01, noOfChannel, 0x00, 0x00, (byte)0x0A};
+		byte[] readCurrentCommand = {(byte)0x92, (byte)0x6A, 0x01, 0x01, noOfChannel, 0x00, 0x00, 0x00};
+		populateChecksum(readCurrentCommand);
 
 		// Send read current command
 		device.write(readCurrentCommand, 0, 8);
@@ -50,7 +52,7 @@ public class PECMAC125A
 
 		// Read Current data
 		// msb1, msb, lsb
-		device.read(data, 0, noOfChannel * 3);
+		device.read(data, 0, noOfChannel * 3 + 1);
 		Thread.sleep(500);
 
 		for(int i = 0; i < noOfChannel; i++)
@@ -58,7 +60,7 @@ public class PECMAC125A
 			int msb1 = (data[i * 3] & 0xFF);
 			int msb = (data[1 + i * 3] & 0xFF);
 			int lsb = (data[2 + i * 3] & 0xFF); 
-			float current = ((msb1 * 65536.0) + (msb * 256.0) + lsb);
+			float current = (float)((msb1 * 65536.0) + (msb * 256.0) + lsb);
 
 			// Convert the data to ampere
 			current = current / 1000;
@@ -68,5 +70,14 @@ public class PECMAC125A
 			System.out.printf("Current : %.3f A %n", current);
 		}
 	}
-}
 
+	private static void populateChecksum(byte[] command)
+	{
+		byte sum = 0x00;
+		for(int i = 0; i < command.length - 1; i++)
+		{
+			sum += command[i];
+		}
+		command[command.length - 1] = sum;
+	}
+}
